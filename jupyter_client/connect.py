@@ -283,7 +283,11 @@ def tunnel_to_kernel(
 
     cf = cast(Dict[str, Any], connection_info)
 
-    lports = tunnel.select_specified_ports(5, starting_port, max_kernels)
+    if starting_port != 0 and max_kernels != 0:
+       lports = tunnel.select_specified_ports(5, starting_port, max_kernels)
+    else:
+       lports = tunnel.select_random_ports(5)
+
     rports = (
         cf["shell_port"],
         cf["iopub_port"],

@@ -249,6 +249,9 @@ class JupyterConsoleApp(ConnectionFileMixin):
 
         self.log.info("Forwarding connections to %s via %s" % (ip, self.sshserver))
 
+        if not self.starting_port and not self.max_kernels:
+           self.starting_port = self.max_kernels = 0
+
         # tunnels return a new set of ports, which will be on localhost:
         self.ip = localhost()
         try:
