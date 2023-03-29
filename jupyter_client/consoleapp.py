@@ -252,7 +252,7 @@ class JupyterConsoleApp(ConnectionFileMixin):
         # tunnels return a new set of ports, which will be on localhost:
         self.ip = localhost()
         try:
-            newports = tunnel_to_kernel(info, self.sshserver, self.sshkey)
+            newports = tunnel_to_kernel(info, self.sshserver, self.starting_port, self.max_kernels, self.sshkey)
         except:  # noqa
             # even catch KeyboardInterrupt
             self.log.error("Could not setup tunnels", exc_info=True)

@@ -37,7 +37,6 @@ from traitlets import Type
 from traitlets import Unicode
 from traitlets.config import LoggingConfigurable
 from traitlets.config import SingletonConfigurable
-
 from .localinterfaces import localhost
 from .utils import _filefind
 
@@ -246,6 +245,8 @@ def find_connection_file(
 def tunnel_to_kernel(
     connection_info: Union[str, KernelConnectionInfo],
     sshserver: str,
+    starting_port: int,
+    max_kernels: int,
     sshkey: Optional[str] = None,
 ) -> Tuple[Any, ...]:
     """tunnel connections to a kernel via ssh
@@ -282,7 +283,7 @@ def tunnel_to_kernel(
 
     cf = cast(Dict[str, Any], connection_info)
 
-    lports = tunnel.select_random_ports(5)
+    lports = tunnel.select_specified_ports(5, starting_port, max_kernels)
     rports = (
         cf["shell_port"],
         cf["iopub_port"],
@@ -372,6 +373,8 @@ class ConnectionFileMixin(LoggingConfigurable):
     iopub_port = Integer(0, config=True, help="set the iopub (PUB) port [default: random]")
     stdin_port = Integer(0, config=True, help="set the stdin (ROUTER) port [default: random]")
     control_port = Integer(0, config=True, help="set the control (ROUTER) port [default: random]")
+    starting_port = Integer(0, config=True, help="set the starting port [default: random]")
+    max_kernels = Integer(0, config=True, help="set the max_kernels")
 
     # names of the ports with random assignment
     _random_port_names: Optional[List[str]] = None
@@ -648,19 +651,54 @@ class LocalPortCache(SingletonConfigurable):
         super().__init__(**kwargs)
         self.currently_used_ports: Set[int] = set()
 
-    def find_available_port(self, ip: str) -> int:
-        while True:
-            tmp_sock = socket.socket()
-            tmp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, b"\0" * 8)
-            tmp_sock.bind((ip, 0))
-            port = tmp_sock.getsockname()[1]
-            tmp_sock.close()
+    def port_is_used(self, port, ip: str) -> bool:
+        s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        result = s.connect_ex((ip, port))         
+        if result == 0:
+          #print('%s:%d is used' % (ip, port))
+          s.close()
+          return True
+        else:
+          #print('%s:%d is unused' % (ip, port))
+          s.close()
+          return False
 
-            # This is a workaround for https://github.com/jupyter/jupyter_client/issues/487
-            # We prevent two kernels to have the same ports.
-            if port not in self.currently_used_ports:
-                self.currently_used_ports.add(port)
-                return port
+    def find_available_port(self, ip: str, starting_port: int, max_kernels: int) -> int:
+        port = 0 
+        while True:
+           if starting_port != 0 and max_kernels != 0:
+              for port in range(starting_port, starting_port+5*max_kernels):
+                  if port not in self.currently_used_ports:
+                     result = self.port_is_used(port, ip)
+                     if not result:
+                        if port in self.currently_used_ports:
+                           self.currently_used_ports.remove(port)
+                        sock = socket.socket()
+                        sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, b"\0" * 8)
+                        sock.bind((ip, port))
+                        sock.close()
+                        break
+            
+              # This is a workaround for https://github.com/jupyter/jupyter_client/issues/487
+              # We prevent two kernels to have the same ports.
+              if port not in self.currently_used_ports:
+                 self.currently_used_ports.add(port)
+                 return port
+              if port == starting_port+5*max_kernels-1 or port == 0:
+                 raise ValueError("Unable to create a new kernel because there are no more available ports.") 
+
+           if starting_port == 0 and max_kernels == 0:
+              tmp_sock = socket.socket()
+              tmp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, b"\0" * 8)
+              tmp_sock.bind((ip, 0))
+              port = tmp_sock.getsockname()[1]
+              tmp_sock.close()
+
+              # This is a workaround for https://github.com/jupyter/jupyter_client/issues/487
+              # We prevent two kernels to have the same ports.
+              if port not in self.currently_used_ports:
+                 self.currently_used_ports.add(port)
+                 return port
 
     def return_port(self, port: int) -> None:
         if port in self.currently_used_ports:  # Tolerate uncached ports

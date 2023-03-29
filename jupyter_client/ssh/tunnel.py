@@ -50,6 +50,33 @@ def select_random_ports(n):
         sock.close()
     return ports
 
+def port_is_used(port: int, ip: str) -> bool:
+    s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+    try:
+      s.connect((ip, port))
+      s.close()
+      #print('%s:%d is used' % (ip, port))
+      return True
+    except:
+      #print('%s:%d is unused' % (ip, port))
+      s.close()
+      return False
+
+def select_specified_ports(n: int, starting_port: int, max_kernels: int): 
+    currently_used_ports = set()
+    ports = []
+    port = 0
+    while True:
+        for port in range(starting_port, starting_port+5*max_kernels):
+            if port not in currently_used_ports:
+               result = port_is_used(port, '127.0.0.1')
+               if not result:
+                  currently_used_ports.add(port)
+                  ports.append(port)          
+                  if len(ports) == 5:
+                     return ports 
+        if port == starting_port+5*max_kernels-1 or port == 0:
+           raise ValueError("Unable to create a new kernel because there are no more available ports.") 
 
 # -----------------------------------------------------------------------------
 # Check for passwordless login

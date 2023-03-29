@@ -164,35 +164,56 @@ class LocalProvisioner(KernelProvisionerBase):
 
         # This should be considered temporary until a better division of labor can be defined.
         km = self.parent
+        for key, value in kwargs.items():
+          if key == "max_kernels":
+             km.max_kernels = value
+             # Remove "max_kernels" from kwargs
+             kwargs.pop('max_kernels')
+             break
+        for key, value in kwargs.items():
+          if key == "starting_port":
+             km.starting_port = value
+             # Remove "starting_port" from kwargs
+             kwargs.pop('starting_port')
+             break
+
         if km:
-            if km.transport == 'tcp' and not is_local_ip(km.ip):
-                raise RuntimeError(
-                    "Can only launch a kernel on a local interface. "
-                    "This one is not: %s."
-                    "Make sure that the '*_address' attributes are "
-                    "configured properly. "
-                    "Currently valid addresses are: %s" % (km.ip, local_ips())
-                )
-            # build the Popen cmd
-            extra_arguments = kwargs.pop('extra_arguments', [])
+           if km.transport == 'tcp' and not is_local_ip(km.ip):
+              raise RuntimeError(
+                 "Can only launch a kernel on a local interface. "
+                 "This one is not: %s."
+                 "Make sure that the '*_address' attributes are "
+                 "configured properly. "
+                 "Currently valid addresses are: %s" % (km.ip, local_ips())
+              )
+           # build the Popen cmd
+           extra_arguments = kwargs.pop('extra_arguments', [])
 
-            # write connection file / get default ports
-            # TODO - change when handshake pattern is adopted
-            if km.cache_ports and not self.ports_cached:
-                lpc = LocalPortCache.instance()
-                km.shell_port = lpc.find_available_port(km.ip)
-                km.iopub_port = lpc.find_available_port(km.ip)
-                km.stdin_port = lpc.find_available_port(km.ip)
-                km.hb_port = lpc.find_available_port(km.ip)
-                km.control_port = lpc.find_available_port(km.ip)
-                self.ports_cached = True
+           # write connection file / get default ports
+           # TODO - change when handshake pattern is adopted
+           if km.cache_ports and not self.ports_cached and km.starting_port and km.max_kernels:
+              lpc = LocalPortCache.instance()
+              km.shell_port = lpc.find_available_port(km.ip, km.starting_port, km.max_kernels)
+              km.iopub_port = lpc.find_available_port(km.ip, km.starting_port, km.max_kernels)
+              km.stdin_port = lpc.find_available_port(km.ip, km.starting_port, km.max_kernels)
+              km.hb_port = lpc.find_available_port(km.ip, km.starting_port, km.max_kernels)
+              km.control_port = lpc.find_available_port(km.ip, km.starting_port, km.max_kernels)
+              self.ports_cached = True
+           elif km.cache_ports and not self.ports_cached:
+              lpc = LocalPortCache.instance()
+              km.shell_port = lpc.find_available_port(km.ip, 0, 0)
+              km.iopub_port = lpc.find_available_port(km.ip, 0, 0)
+              km.stdin_port = lpc.find_available_port(km.ip, 0, 0)
+              km.hb_port = lpc.find_available_port(km.ip, 0, 0)
+              km.control_port = lpc.find_available_port(km.ip, 0, 0)
+              self.ports_cached = True
 
-            km.write_connection_file()
-            self.connection_info = km.get_connection_info()
+           km.write_connection_file()
+           self.connection_info = km.get_connection_info()
 
-            kernel_cmd = km.format_kernel_cmd(
-                extra_arguments=extra_arguments
-            )  # This needs to remain here for b/c
+           kernel_cmd = km.format_kernel_cmd(
+              extra_arguments=extra_arguments
+           )  # This needs to remain here for b/c
         else:
             extra_arguments = kwargs.pop('extra_arguments', [])
             kernel_cmd = self.kernel_spec.argv + extra_arguments
@@ -216,7 +237,7 @@ class LocalProvisioner(KernelProvisionerBase):
     @staticmethod
     def _scrub_kwargs(kwargs: Dict[str, Any]) -> Dict[str, Any]:
         """Remove any keyword arguments that Popen does not tolerate."""
-        keywords_to_scrub: List[str] = ['extra_arguments', 'kernel_id']
+        keywords_to_scrub: List[str] = ['extra_arguments', 'kernel_id', 'starting_port', 'max_kernels']
         scrubbed_kwargs = kwargs.copy()
         for kw in keywords_to_scrub:
             scrubbed_kwargs.pop(kw, None)

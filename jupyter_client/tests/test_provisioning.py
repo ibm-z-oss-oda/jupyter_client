@@ -273,6 +273,8 @@ class TestRuntime:
             with pytest.raises(NoSuchKernel):
                 await kernel_mgr.start_kernel()
         else:
+            kernel_mgr.starting_port = 28031
+            kernel_mgr.max_kernels = 10 
             await kernel_mgr.start_kernel()
 
             TestRuntime.validate_provisioner(kernel_mgr)
