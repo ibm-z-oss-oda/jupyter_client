@@ -164,6 +164,9 @@ class LocalProvisioner(KernelProvisionerBase):
 
         # This should be considered temporary until a better division of labor can be defined.
         km = self.parent
+ 
+        # This is to satisfy the test code, which will pass parameters like max_kernels and
+        # starting_port in **kwargs       
         for key, value in kwargs.items():
           if key == "max_kernels":
              km.max_kernels = value
