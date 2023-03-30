@@ -115,7 +115,7 @@ class KernelRestarter(LoggingConfigurable):
         if hasattr(self.parent, "starting_port") and hasattr(self.parent, "max_kernels") and self.parent.starting_port != 0 and self.parent.max_kernels != 0:
            ports_type = "user specified"
         else:
-           ports_type =	"random"
+           ports_type = "random"
 
         if self.debug:
             self.log.debug("Polling kernel...")
