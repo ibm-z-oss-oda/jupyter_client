@@ -377,7 +377,7 @@ class ConnectionFileMixin(LoggingConfigurable):
     iopub_port = Integer(0, config=True, help="set the iopub (PUB) port [default: random]")
     stdin_port = Integer(0, config=True, help="set the stdin (ROUTER) port [default: random]")
     control_port = Integer(0, config=True, help="set the control (ROUTER) port [default: random]")
-    starting_port = Integer(0, config=True, help="set the starting port [default: random]")
+    starting_port = Integer(0, config=True, help="set the starting_port")
     max_kernels = Integer(0, config=True, help="set the max_kernels")
 
     # names of the ports with random assignment

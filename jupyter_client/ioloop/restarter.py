@@ -50,6 +50,11 @@ class IOLoopKernelRestarter(KernelRestarter):
 
 class AsyncIOLoopKernelRestarter(IOLoopKernelRestarter):
     async def poll(self):
+        if hasattr(self.parent, "starting_port") and hasattr(self.parent, "max_kernels") and self.parent.starting_port != 0 and self.parent.max_kernels != 0:
+           ports_type =	"user specified"
+        else:
+           ports_type =	"random"
+
         if self.debug:
             self.log.debug("Polling kernel...")
         is_alive = await self.kernel_manager.is_alive()
@@ -70,7 +75,7 @@ class AsyncIOLoopKernelRestarter(IOLoopKernelRestarter):
             else:
                 newports = self.random_ports_until_alive and self._initial_startup
                 self.log.info(
-                    "AsyncIOLoopKernelRestarter: restarting kernel (%i/%i), %s user specified ports",
+                    "AsyncIOLoopKernelRestarter: restarting kernel (%i/%i), %s "+ ports_type +" ports",
                     self._restart_count,
                     self.restart_limit,
                     "new" if newports else "keep",
