@@ -655,34 +655,21 @@ class LocalPortCache(SingletonConfigurable):
         super().__init__(**kwargs)
         self.currently_used_ports: Set[int] = set()
 
-    def port_is_used(self, port, ip: str) -> bool:
-        s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-        result = s.connect_ex((ip, port))         
-        if result == 0:
-          #print('%s:%d is used' % (ip, port))
-          s.close()
-          return True
-        else:
-          #print('%s:%d is unused' % (ip, port))
-          s.close()
-          return False
-
     def find_available_port(self, ip: str, starting_port: int, max_kernels: int) -> int:
         port = 0 
         while True:
            if starting_port != 0 and max_kernels != 0:
               for port in range(starting_port, starting_port+5*max_kernels):
                   if port not in self.currently_used_ports:
-                     result = self.port_is_used(port, ip)
-                     if not result:
-                        if port in self.currently_used_ports:
-                           self.currently_used_ports.remove(port)
-                        sock = socket.socket()
-                        sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, b"\0" * 8)
+                     sock = socket.socket()
+                     sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, b"\0" * 8)
+                     try:
                         sock.bind((ip, port))
                         sock.close()
                         break
-            
+                     except:
+                        pass
+
               # This is a workaround for https://github.com/jupyter/jupyter_client/issues/487
               # We prevent two kernels to have the same ports.
               if port not in self.currently_used_ports:
