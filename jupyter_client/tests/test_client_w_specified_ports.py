@@ -27,7 +27,7 @@ class TestKernelClient(TestCase):
             KernelSpecManager().get_kernel_spec(NATIVE_KERNEL_NAME)
         except NoSuchKernel:
             pytest.skip()
-        self.km, self.kc = start_new_kernel(kernel_name=NATIVE_KERNEL_NAME)
+        self.km, self.kc = start_new_kernel(kernel_name=NATIVE_KERNEL_NAME, starting_port=29031, max_kernels=5)
 
     def tearDown(self):
         self.env_patch.stop()

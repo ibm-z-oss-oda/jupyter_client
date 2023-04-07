@@ -74,10 +74,10 @@ class TestKernelManager(TestCase):
     @staticmethod
     def _run_lifecycle(km, test_kid=None):
         if test_kid:
-            kid = km.start_kernel(stdout=PIPE, stderr=PIPE, kernel_id=test_kid, starting_port=31031, max_kernels=10)
+            kid = km.start_kernel(stdout=PIPE, stderr=PIPE, kernel_id=test_kid)
             assert kid == test_kid
         else:
-            kid = km.start_kernel(stdout=PIPE, stderr=PIPE, starting_port=31031, max_kernels=10)
+            kid = km.start_kernel(stdout=PIPE, stderr=PIPE)
         assert km.is_alive(kid)
         assert km.get_kernel(kid).ready.done()
         assert kid in km
@@ -95,7 +95,7 @@ class TestKernelManager(TestCase):
         kc.stop_channels()
 
     def _run_cinfo(self, km, transport, ip):
-        kid = km.start_kernel(stdout=PIPE, stderr=PIPE, starting_port=31031, max_kernels=10)
+        kid = km.start_kernel(stdout=PIPE, stderr=PIPE)
         km.get_kernel(kid)
         cinfo = km.get_connection_info(kid)
         self.assertEqual(transport, cinfo["transport"])
@@ -124,7 +124,7 @@ class TestKernelManager(TestCase):
 
     def test_shutdown_all(self):
         km = self._get_tcp_km()
-        kid = km.start_kernel(stdout=PIPE, stderr=PIPE, starting_port=31031, max_kernels=10)
+        kid = km.start_kernel(stdout=PIPE, stderr=PIPE)
         self.assertIn(kid, km)
         km.shutdown_all()
         self.assertNotIn(kid, km)
@@ -193,7 +193,7 @@ class TestKernelManager(TestCase):
         km = self._get_tcp_km_sub()
 
         km.reset_counts()
-        kid = km.start_kernel(stdout=PIPE, stderr=PIPE, starting_port=31031, max_kernels=10)
+        kid = km.start_kernel(stdout=PIPE, stderr=PIPE)
         assert km.call_count("start_kernel") == 1
         assert isinstance(km.get_kernel(kid), SyncKMSubclass)
         assert km.get_kernel(kid).call_count("start_kernel") == 1
@@ -288,10 +288,10 @@ class TestAsyncKernelManager(AsyncTestCase):
     @staticmethod
     async def _run_lifecycle(km, test_kid=None):
         if test_kid:
-            kid = await km.start_kernel(stdout=PIPE, stderr=PIPE, kernel_id=test_kid, starting_port=31031, max_kernels=10)
+            kid = await km.start_kernel(stdout=PIPE, stderr=PIPE, kernel_id=test_kid)
             assert kid == test_kid
         else:
-            kid = await km.start_kernel(stdout=PIPE, stderr=PIPE, starting_port=31031, max_kernels=10)
+            kid = await km.start_kernel(stdout=PIPE, stderr=PIPE)
         assert await km.is_alive(kid)
         assert kid in km
         assert kid in km.list_kernel_ids()
@@ -335,7 +335,7 @@ class TestAsyncKernelManager(AsyncTestCase):
     @gen_test
     async def test_shutdown_all(self):
         km = self._get_tcp_km()
-        kid = await km.start_kernel(stdout=PIPE, stderr=PIPE, starting_port=31031, max_kernels=10)
+        kid = await km.start_kernel(stdout=PIPE, stderr=PIPE)
         self.assertIn(kid, km)
         await km.shutdown_all()
         self.assertNotIn(kid, km)
@@ -345,13 +345,13 @@ class TestAsyncKernelManager(AsyncTestCase):
     @gen_test(timeout=20)
     async def test_use_after_shutdown_all(self):
         km = self._get_tcp_km()
-        kid = await km.start_kernel(stdout=PIPE, stderr=PIPE, starting_port=31031, max_kernels=10)
+        kid = await km.start_kernel(stdout=PIPE, stderr=PIPE)
         self.assertIn(kid, km)
         await km.shutdown_all()
         self.assertNotIn(kid, km)
 
         # Start another kernel
-        kid = await km.start_kernel(stdout=PIPE, stderr=PIPE, starting_port=31031, max_kernels=10)
+        kid = await km.start_kernel(stdout=PIPE, stderr=PIPE)
         self.assertIn(kid, km)
         await km.shutdown_all()
         self.assertNotIn(kid, km)
@@ -361,13 +361,13 @@ class TestAsyncKernelManager(AsyncTestCase):
     @gen_test(timeout=20)
     async def test_shutdown_all_while_starting(self):
         km = self._get_tcp_km()
-        kid_future = asyncio.ensure_future(km.start_kernel(stdout=PIPE, stderr=PIPE, starting_port=31031, max_kernels=10))
+        kid_future = asyncio.ensure_future(km.start_kernel(stdout=PIPE, stderr=PIPE))
         # This is relying on the ordering of the asyncio queue, not sure if guaranteed or not:
         kid, _ = await asyncio.gather(kid_future, km.shutdown_all())
         self.assertNotIn(kid, km)
 
         # Start another kernel
-        kid = await ensure_future(km.start_kernel(stdout=PIPE, stderr=PIPE, starting_port=31031, max_kernels=10))
+        kid = await ensure_future(km.start_kernel(stdout=PIPE, stderr=PIPE))
         self.assertIn(kid, km)
         self.assertEqual(len(km), 1)
         await km.shutdown_all()
@@ -378,7 +378,7 @@ class TestAsyncKernelManager(AsyncTestCase):
     @gen_test
     async def test_use_pending_kernels(self):
         km = self._get_pending_kernels_km()
-        kid = await ensure_future(km.start_kernel(stdout=PIPE, stderr=PIPE, starting_port=31031, max_kernels=10))
+        kid = await ensure_future(km.start_kernel(stdout=PIPE, stderr=PIPE))
         kernel = km.get_kernel(kid)
         assert not kernel.ready.done()
         assert kid in km
@@ -401,7 +401,7 @@ class TestAsyncKernelManager(AsyncTestCase):
     @gen_test
     async def test_use_pending_kernels_early_restart(self):
         km = self._get_pending_kernels_km()
-        kid = await ensure_future(km.start_kernel(stdout=PIPE, stderr=PIPE, starting_port=31031, max_kernels=10))
+        kid = await ensure_future(km.start_kernel(stdout=PIPE, stderr=PIPE))
         kernel = km.get_kernel(kid)
         assert not kernel.ready.done()
         with pytest.raises(RuntimeError):
@@ -415,7 +415,7 @@ class TestAsyncKernelManager(AsyncTestCase):
     @gen_test
     async def test_use_pending_kernels_early_shutdown(self):
         km = self._get_pending_kernels_km()
-        kid = await ensure_future(km.start_kernel(stdout=PIPE, stderr=PIPE, starting_port=31031, max_kernels=10))
+        kid = await ensure_future(km.start_kernel(stdout=PIPE, stderr=PIPE))
         kernel = km.get_kernel(kid)
         assert not kernel.ready.done()
         # Try shutting down while the kernel is pending
@@ -427,7 +427,7 @@ class TestAsyncKernelManager(AsyncTestCase):
     @gen_test
     async def test_use_pending_kernels_early_interrupt(self):
         km = self._get_pending_kernels_km()
-        kid = await ensure_future(km.start_kernel(stdout=PIPE, stderr=PIPE, starting_port=31031, max_kernels=10))
+        kid = await ensure_future(km.start_kernel(stdout=PIPE, stderr=PIPE))
         kernel = km.get_kernel(kid)
         assert not kernel.ready.done()
         with pytest.raises(RuntimeError):
@@ -521,7 +521,7 @@ class TestAsyncKernelManager(AsyncTestCase):
         mkm = self._get_tcp_km_sub()
 
         mkm.reset_counts()
-        kid = await mkm.start_kernel(stdout=PIPE, stderr=PIPE, starting_port=31031, max_kernels=10)
+        kid = await mkm.start_kernel(stdout=PIPE, stderr=PIPE)
         assert mkm.call_count("start_kernel") == 1
         assert isinstance(mkm.get_kernel(kid), AsyncKMSubclass)
         assert mkm.get_kernel(kid).call_count("start_kernel") == 1
@@ -581,7 +581,7 @@ class TestAsyncKernelManager(AsyncTestCase):
             name="bad",
         )
         with pytest.raises(FileNotFoundError):
-            await ensure_future(km.start_kernel(kernel_name="bad", stdout=PIPE, stderr=PIPE, starting_port=31031, max_kernels=10))
+            await ensure_future(km.start_kernel(kernel_name="bad", stdout=PIPE, stderr=PIPE))
 
     @gen_test
     async def test_bad_kernelspec_pending(self):
@@ -592,7 +592,7 @@ class TestAsyncKernelManager(AsyncTestCase):
             name="bad",
         )
         kernel_id = await ensure_future(
-            km.start_kernel(kernel_name="bad", stdout=PIPE, stderr=PIPE, starting_port=31031, max_kernels=10)
+            km.start_kernel(kernel_name="bad", stdout=PIPE, stderr=PIPE)
         )
         with pytest.raises(FileNotFoundError):
             await km.get_kernel(kernel_id).ready

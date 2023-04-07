@@ -75,10 +75,11 @@ class AsyncIOLoopKernelRestarter(IOLoopKernelRestarter):
             else:
                 newports = self.random_ports_until_alive and self._initial_startup
                 self.log.info(
-                    "AsyncIOLoopKernelRestarter: restarting kernel (%i/%i), %s "+ ports_type +" ports",
+                    "AsyncIOLoopKernelRestarter: restarting kernel (%i/%i), %s %s ports",
                     self._restart_count,
                     self.restart_limit,
                     "new" if newports else "keep",
+                    ports_type,
                 )
                 self._fire_callbacks("restart")
                 await self.kernel_manager.restart_kernel(now=True, newports=newports)

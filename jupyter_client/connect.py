@@ -656,7 +656,6 @@ class LocalPortCache(SingletonConfigurable):
         self.currently_used_ports: Set[int] = set()
 
     def find_available_port(self, ip: str, starting_port: int, max_kernels: int) -> int:
-        port = 0 
         while True:
            if starting_port != 0 and max_kernels != 0:
               for port in range(starting_port, starting_port+5*max_kernels):
@@ -675,10 +674,10 @@ class LocalPortCache(SingletonConfigurable):
               if port not in self.currently_used_ports:
                  self.currently_used_ports.add(port)
                  return port
-              if port == starting_port+5*max_kernels-1 or port == 0:
+              elif port == starting_port+5*max_kernels-1:
                  raise ValueError("Unable to create a new kernel because there are no more available ports.") 
 
-           if starting_port == 0 and max_kernels == 0:
+           elif starting_port == 0 and max_kernels == 0:
               tmp_sock = socket.socket()
               tmp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, b"\0" * 8)
               tmp_sock.bind((ip, 0))

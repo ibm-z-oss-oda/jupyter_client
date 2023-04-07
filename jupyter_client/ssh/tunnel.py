@@ -69,7 +69,7 @@ def select_specified_ports(n: int, starting_port: int, max_kernels: int):
     while True:
         for port in range(starting_port, starting_port+5*max_kernels):
             if port not in currently_used_ports:
-               result = port_is_used(port, '127.0.0.1')
+               result = port_is_used(port, "")
                if not result:
                   currently_used_ports.add(port)
                   ports.append(port)          
