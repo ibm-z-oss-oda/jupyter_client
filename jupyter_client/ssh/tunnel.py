@@ -65,7 +65,6 @@ def port_is_used(port: int, ip: str) -> bool:
 def select_specified_ports(n: int, starting_port: int, max_kernels: int): 
     currently_used_ports = set()
     ports = []
-    port = 0
     while True:
         for port in range(starting_port, starting_port+5*max_kernels):
             if port not in currently_used_ports:
@@ -75,7 +74,7 @@ def select_specified_ports(n: int, starting_port: int, max_kernels: int):
                   ports.append(port)          
                   if len(ports) == 5:
                      return ports 
-        if port == starting_port+5*max_kernels-1 or port == 0:
+        if port == starting_port+5*max_kernels-1:
            raise ValueError("Unable to create a new kernel because there are no more available ports.") 
 
 # -----------------------------------------------------------------------------
